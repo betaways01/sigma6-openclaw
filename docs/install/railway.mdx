@@ -62,7 +62,49 @@ Set these variables on the service:
 - `OPENCLAW_GATEWAY_PORT=8080` (required — must match the port in Public Networking)
 - `OPENCLAW_GATEWAY_TOKEN` (required; treat as an admin secret)
 - `OPENCLAW_STATE_DIR=/data/.openclaw` (recommended)
+- `OPENCLAW_CONFIG_PATH=/data/.openclaw/openclaw.json` (recommended; keeps config on the Railway volume)
 - `OPENCLAW_WORKSPACE_DIR=/data/workspace` (recommended)
+
+Railway also injects `RAILWAY_PUBLIC_DOMAIN`. OpenClaw uses that public domain at
+startup to seed `gateway.controlUi.allowedOrigins`, so the Railway-provided
+`*.up.railway.app` URL keeps working after redeploys.
+
+If you attach a custom domain or need multiple Control UI origins, add:
+
+- `OPENCLAW_CONTROL_UI_ALLOWED_ORIGINS=https://control.example.com,https://chat.example.com`
+
+You can also use a JSON array if you prefer:
+
+- `OPENCLAW_CONTROL_UI_ALLOWED_ORIGINS=["https://control.example.com","https://chat.example.com"]`
+
+`OPENCLAW_GATEWAY_ALLOWED_ORIGINS` remains accepted as a legacy alias.
+
+## First connect
+
+1. Open the Control UI at `https://<your-railway-domain>/openclaw`.
+2. Paste `OPENCLAW_GATEWAY_TOKEN` into the **Gateway Token** field.
+3. Click **Connect**.
+4. If the browser shows `device pairing required`, open Railway shell and approve the request:
+
+```bash
+openclaw devices list
+openclaw devices approve <requestId>
+```
+
+Then click **Connect** again.
+
+## Common Railway fixes
+
+- `origin not allowed`
+  - The browser origin is missing from `gateway.controlUi.allowedOrigins`.
+  - Verify `RAILWAY_PUBLIC_DOMAIN` exists, or set `OPENCLAW_CONTROL_UI_ALLOWED_ORIGINS` explicitly for custom domains.
+- `gateway token missing`
+  - Paste `OPENCLAW_GATEWAY_TOKEN` into the Control UI.
+- `device pairing required`
+  - Approve the pending request with `openclaw devices approve <requestId>`.
+- `EACCES` on config or state paths
+  - Keep `OPENCLAW_STATE_DIR`, `OPENCLAW_CONFIG_PATH`, and `OPENCLAW_WORKSPACE_DIR` on the Railway volume under `/data`.
+  - Avoid editing config files as `root` unless you also restore ownership to the container user (uid `1000`).
 
 ## Connect a channel
 

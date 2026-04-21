@@ -14,6 +14,7 @@ import {
   readConfigFileSnapshot,
   recoverConfigFromLastKnownGood,
   registerConfigWriteListener,
+  setRuntimeConfigSnapshot,
   writeConfigFile,
 } from "../config/config.js";
 import { applyPluginAutoEnable } from "../config/plugin-auto-enable.js";
@@ -322,6 +323,11 @@ export async function startGatewayServer(
         }),
       );
   cfgAtStart = controlUiSeed.config;
+  // Startup can apply runtime-only config repairs when persistence fails (for
+  // example a root-owned Railway volume config). Pin that repaired config so
+  // hot-path loadConfig() callers such as WebSocket origin checks see the same
+  // effective config used for runtime validation.
+  setRuntimeConfigSnapshot(cfgAtStart, configSnapshot.config);
   // Always capture the final config hash after all startup writes (plugin
   // auto-enable, auth token generation, control-UI origin seeding) so the
   // config reloader can recognize its own startup writes and suppress the
